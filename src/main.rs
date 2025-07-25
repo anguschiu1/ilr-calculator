@@ -99,7 +99,7 @@ fn get_absences_from_interactive() -> Vec<(NaiveDate, NaiveDate)> {
 /// The JSON file should be an array of objects, each with "start_date" and "end_date".
 /// e.g., `[{"start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD"}]`
 fn parse_and_validate_absences(data: &str) -> Result<Vec<(NaiveDate, NaiveDate)>, Box<dyn Error>> {
-    let parsed_periods: Vec<AbsencePeriod> = serde_json::from_str(&data)?;
+    let parsed_periods: Vec<AbsencePeriod> = serde_json::from_str(data)?;
 
     // Validate dates and convert to the tuple format used by the rest of the program.
     let mut absence_periods = Vec::new();
