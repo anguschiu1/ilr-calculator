@@ -3,3 +3,4 @@
 fn main() {
     println!("Hello, Jujutsu!");
 }
+// try out jj squash
