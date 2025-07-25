@@ -1,6 +1,17 @@
 use chrono::{Duration, NaiveDate};
+use serde::Deserialize;
 use std::cmp::{max, min};
+use std::env;
+use std::error::Error;
+use std::fs;
 use std::io::{self, Write};
+
+/// Represents a single absence period from the JSON input.
+#[derive(Deserialize)]
+struct AbsencePeriod {
+    start_date: NaiveDate,
+    end_date: NaiveDate,
+}
 
 /// Prompts the user for a date and parses it.
 ///
@@ -41,20 +52,8 @@ fn get_date_from_user(prompt: &str) -> Option<NaiveDate> {
     }
 }
 
-fn main() {
-    println!("--- Absence Calculator for ILR ---");
-    println!("Please enter all dates in YYYY-MM-DD format.");
-
-    // // 1. Get the ILR start date from the user.
-    // let ilr_start_date = match get_date_from_user("Enter the ILR start date: ") {
-    //     Some(date) => date,
-    //     None => {
-    //         println!("ILR start date is required. Exiting.");
-    //         return;
-    //     }
-    // };
-
-    // 2. Get multiple absence date ranges from the user.
+/// Gathers absence periods by prompting the user interactively.
+fn get_absences_from_interactive() -> Vec<(NaiveDate, NaiveDate)> {
     let mut absence_periods = Vec::new();
     println!(
         "\nEnter absence periods. To finish, press Enter on an empty line for the start date."
@@ -83,8 +82,34 @@ fn main() {
         absence_periods.push((absence_start, absence_end));
         counter += 1;
     }
+    absence_periods
+}
 
-    // 3 & 4. Calculate and print the total number of absence days within the 365 days prior to each absence end date.
+/// Reads absence periods from a JSON file.
+/// The JSON file should be an array of objects, each with "start_date" and "end_date".
+/// e.g., `[{"start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD"}]`
+fn get_absences_from_file(path: &str) -> Result<Vec<(NaiveDate, NaiveDate)>, Box<dyn Error>> {
+    let data = fs::read_to_string(path)?;
+    let parsed_periods: Vec<AbsencePeriod> = serde_json::from_str(&data)?;
+
+    // Validate dates and convert to the tuple format used by the rest of the program.
+    let mut absence_periods = Vec::new();
+    for period in parsed_periods {
+        if period.end_date < period.start_date {
+            // Using eprintln! to write to standard error for error messages.
+            eprintln!(
+                "Warning: Invalid period in JSON file. End date {} is before start date {}. Skipping.",
+                period.end_date, period.start_date
+            );
+            continue;
+        }
+        absence_periods.push((period.start_date, period.end_date));
+    }
+    Ok(absence_periods)
+}
+
+/// Calculates and prints the results for the given absence periods.
+fn calculate_and_print_results(absence_periods: &[(NaiveDate, NaiveDate)]) {
     println!("\n--- Absence Calculation Results (365-day rolling window) ---");
 
     for (absence_start, absence_end) in absence_periods.iter() {
@@ -111,10 +136,50 @@ fn main() {
             absence_end.format("%Y-%m-%d")
         );
         println!(
-            "  365-day Calculation Window: {} to {}",
+            "  Number of Days in absence: {} days",
+            (*absence_end - *absence_start).num_days() + 1
+        );
+        println!(
+            "  365-day calculation window: {} to {}",
             calculation_start.format("%Y-%m-%d"),
             calculation_end.format("%Y-%m-%d")
         );
-        println!("  Total Absence Days within Window: {}", total_absence_days);
+        println!(
+            "  Total absence days within this window: {}",
+            total_absence_days
+        );
     }
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    let absence_periods = if args.len() > 1 {
+        // File input mode
+        let file_path = &args[1];
+        println!("--- Reading absences from {} ---", file_path);
+        match get_absences_from_file(file_path) {
+            Ok(periods) => periods,
+            Err(e) => {
+                eprintln!(
+                    "Error: Failed to process file '{}'. Reason: {}",
+                    file_path, e
+                );
+                return;
+            }
+        }
+    } else {
+        // Interactive mode
+        println!("--- Absence Calculator (Interactive Mode) ---");
+        println!("Usage: Pass a JSON file path as an argument, or enter dates interactively.");
+        println!("Please enter all dates in YYYY-MM-DD format.");
+        get_absences_from_interactive()
+    };
+
+    if absence_periods.is_empty() {
+        println!("\nNo absence periods to process. Exiting.");
+        return;
+    }
+
+    calculate_and_print_results(&absence_periods);
 }
