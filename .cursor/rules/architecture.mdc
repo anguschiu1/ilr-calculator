@@ -1,0 +1,75 @@
+---
+description: Architecture decisions for client-side web application
+alwaysApply: true
+---
+
+# Architecture Patterns
+
+## Client-Side Application
+
+This is a client-side web application (SPA) optimized for mobile-first design. All calculation logic runs in the browser via WebAssembly.
+
+- **Frontend**: Vue.js/Nuxt.js handles UI and user interactions (mobile-first)
+- **Calculations**: Rust compiled to WASM performs all ILR calculations client-side
+- **Server**: Lightweight server serves static assets and provides minimal API if needed
+
+## Data Flow
+
+```
+User Input (Vue Component)
+  ↓
+Composable (useAbsenceCalculator)
+  ↓
+WASM Module (Rust calculation functions)
+  ↓
+Results (JSON)
+  ↓
+Display (Vue Component with shadcn/ui)
+```
+
+## WASM Integration Strategy
+
+- Load WASM module once on app initialization
+- Expose calculation functions through composables
+- Keep WASM bundle size minimal (avoid heavy dependencies)
+- Handle WASM loading errors gracefully
+
+```typescript
+// Load WASM on app init
+const wasmModule = await import('@/wasm/ilr_calculator')
+// Expose through composable
+export const useAbsenceCalculator = () => ({
+  calculate: (periods: AbsencePeriod[]) => 
+    wasmModule.calculate_rolling_absences(JSON.stringify(periods))
+})
+```
+
+## Separation of Concerns
+
+- **Rust/WASM**: Pure calculation logic, no UI dependencies
+- **Vue Components**: UI rendering, user interaction, form validation
+- **Composables**: Bridge between Vue and WASM, handle data transformation
+- **Server**: Static file serving, optional API endpoints for future features
+
+## Build and Deployment
+
+- Separate Rust WASM build (`wasm-pack build`)
+- Frontend build (Nuxt/Vite)
+- Server setup for static hosting (minimal Node.js/Deno server or CDN)
+
+## Performance Considerations
+
+- Lazy load WASM module (don't block initial render)
+- Debounce user input for real-time calculations
+- Cache calculation results when inputs haven't changed
+- Optimize WASM bundle size (tree-shake unused code)
+- **Mobile optimization**: Minimize initial bundle size, optimize for slower mobile networks
+- **Touch performance**: Ensure smooth interactions on mobile devices
+- **Viewport optimization**: Use proper meta tags for mobile viewport (`width=device-width, initial-scale=1`)
+
+## Future Extensibility
+
+Architecture supports adding:
+- Server-side API endpoints (e.g., data persistence, user accounts)
+- Progressive Web App (PWA) features
+- Offline calculation capability (WASM runs offline)

@@ -1,0 +1,92 @@
+---
+description: shadcn/ui component and styling conventions
+alwaysApply: true
+---
+
+# shadcn/ui Styling Patterns
+
+## Component Usage
+
+Use shadcn-nuxt module or shadcn-vue components. Components are copied into your project - customize them directly.
+
+```vue
+<!-- ✅ GOOD - Use shadcn components -->
+<template>
+  <Button @click="handleSubmit">Calculate</Button>
+  <Input v-model="date" type="date" />
+  <Card>
+    <CardHeader>Results</CardHeader>
+    <CardContent>{{ results }}</CardContent>
+  </Card>
+</template>
+```
+
+## Tailwind CSS Patterns
+
+- Use utility classes for styling
+- Follow shadcn design tokens (spacing, colors, typography)
+- Customize theme in `tailwind.config.js` to match shadcn defaults
+
+```vue
+<!-- ✅ GOOD - Consistent spacing -->
+<div class="space-y-4 p-6">
+  <h2 class="text-2xl font-semibold">Absence Calculator</h2>
+</div>
+
+<!-- ❌ BAD - Inconsistent spacing -->
+<div style="padding: 20px;">
+  <h2 style="font-size: 24px;">Absence Calculator</h2>
+</div>
+```
+
+## Component Customization
+
+Modify copied shadcn components in `components/ui/`. Don't modify node_modules.
+
+## Design System Consistency
+
+- Use shadcn color palette (slate, gray, etc.)
+- Follow shadcn spacing scale (0.5, 1, 2, 4, 6, 8, etc.)
+- Use consistent border radius (default: 0.5rem)
+- Match shadcn typography scale
+
+## Mobile-First Responsive Design
+
+Start with mobile styles (base), then enhance for larger screens using Tailwind breakpoints.
+
+```vue
+<!-- ✅ GOOD - Mobile-first -->
+<div class="w-full px-4 py-6 sm:px-6 md:px-8 lg:px-12">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Mobile: 1 column, Tablet: 2 columns, Desktop: 3 columns -->
+  </div>
+</div>
+
+<!-- ❌ BAD - Desktop-first -->
+<div class="grid grid-cols-3 gap-4 md:grid-cols-2 sm:grid-cols-1">
+  <!-- Wrong order - should start mobile-first -->
+</div>
+```
+
+## Touch-Friendly UI
+
+Ensure all interactive elements meet mobile usability standards.
+
+- Minimum touch target size: 44x44px (use `min-h-[44px] min-w-[44px]`)
+- Adequate spacing between interactive elements (at least 8px)
+- Use full-width buttons on mobile (`w-full sm:w-auto`)
+- Optimize form inputs for mobile keyboards (use appropriate `inputmode`)
+
+```vue
+<!-- ✅ GOOD - Touch-friendly -->
+<Button class="min-h-[44px] w-full sm:w-auto px-6">
+  Calculate
+</Button>
+
+<!-- ❌ BAD - Too small for touch -->
+<Button class="h-8 px-2">Calculate</Button>
+```
+
+## Dark Mode
+
+If implementing dark mode, use shadcn's dark mode utilities (`dark:` prefix).

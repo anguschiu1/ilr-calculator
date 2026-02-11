@@ -1,0 +1,116 @@
+---
+description: Vue.js and Nuxt.js frontend patterns for ilr-calculator
+alwaysApply: true
+---
+
+# Vue/Nuxt Frontend Patterns
+
+## Component Structure
+
+Prefer Composition API with `<script setup>` syntax. Use TypeScript for type safety.
+
+```vue
+<!-- ✅ GOOD -->
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+interface AbsencePeriod {
+  start_date: string
+  end_date: string
+}
+
+const periods = ref<AbsencePeriod[]>([])
+const isLoading = ref(false)
+</script>
+
+<!-- ❌ BAD -->
+<script>
+export default {
+  data() {
+    return { periods: [] }
+  }
+}
+</script>
+```
+
+## State Management
+
+- Use Pinia for complex shared state
+- Use composables for reusable logic (e.g., `useAbsenceCalculator.ts`)
+- Keep component state local when possible
+
+## WASM Integration
+
+Load WASM module on app initialization. Expose calculation functions through composables.
+
+```typescript
+// ✅ GOOD - composable pattern
+export const useAbsenceCalculator = () => {
+  const calculate = async (periods: AbsencePeriod[]) => {
+    const wasm = await import('@/wasm/ilr_calculator')
+    return wasm.calculate_rolling_absences(JSON.stringify(periods))
+  }
+  return { calculate }
+}
+```
+
+## File Organization
+
+```
+components/
+  ui/          # shadcn/ui components
+  AbsenceForm.vue
+composables/
+  useAbsenceCalculator.ts
+types/
+  absence.ts
+wasm/
+  ilr_calculator_bg.wasm
+```
+
+## Error Handling
+
+Handle WASM errors gracefully. Show user-friendly error messages.
+
+```typescript
+try {
+  const result = await calculateAbsences(periods)
+} catch (error) {
+  // Show user-friendly error message
+  errorMessage.value = 'Failed to calculate absences. Please check your input.'
+}
+```
+
+## Performance
+
+- Lazy load WASM module
+- Use `v-memo` for expensive list rendering
+- Debounce user input for calculations
+
+## Mobile-First Design
+
+Design components for mobile screens first, then enhance for larger screens.
+
+- Use mobile-optimized layouts (single column, full-width inputs)
+- Ensure touch targets are at least 44x44px
+- Optimize for portrait orientation (primary use case)
+- Use mobile-friendly form inputs (date pickers, touch keyboards)
+- Consider mobile performance (minimize re-renders, optimize WASM loading)
+
+```vue
+<!-- ✅ GOOD - Mobile-first layout -->
+<template>
+  <div class="w-full px-4 py-6 space-y-4">
+    <Input class="w-full" v-model="date" />
+    <Button class="w-full sm:w-auto">Calculate</Button>
+  </div>
+</template>
+
+<!-- ❌ BAD - Desktop-first layout -->
+<template>
+  <div class="flex gap-4">
+    <Input class="w-64" />
+    <Button>Calculate</Button>
+  </div>
+</template>
+```

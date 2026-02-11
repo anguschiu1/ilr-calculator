@@ -1,0 +1,63 @@
+---
+description: Rust coding standards and WebAssembly patterns for ilr-calculator
+alwaysApply: true
+---
+
+# Rust and WebAssembly Standards
+
+## Error Handling
+
+Use `Result<T, E>` for fallible operations. Propagate errors with `?` operator.
+
+```rust
+// ✅ GOOD
+fn parse_date(input: &str) -> Result<NaiveDate, Box<dyn Error>> {
+    NaiveDate::parse_from_str(input, "%Y-%m-%d")
+        .map_err(|e| Box::new(e) as Box<dyn Error>)
+}
+
+// ❌ BAD
+fn parse_date(input: &str) -> NaiveDate {
+    NaiveDate::parse_from_str(input, "%Y-%m-%d").unwrap()
+}
+```
+
+## WebAssembly Patterns
+
+- Use `wasm-bindgen` for JavaScript interop
+- Export functions with `#[wasm_bindgen]` attribute
+- Use `serde` for JSON serialization (WASM-compatible)
+- Avoid `std::io` in WASM code - use browser APIs via `web-sys` instead
+- Keep WASM exports minimal - expose high-level calculation functions, not internal helpers
+
+```rust
+// ✅ GOOD - WASM export
+#[wasm_bindgen]
+pub fn calculate_rolling_absences(json_input: &str) -> Result<String, JsValue> {
+    let periods: Vec<AbsencePeriod> = serde_json::from_str(json_input)
+        .map_err(|e| JsValue::from_str(&format!("Parse error: {}", e)))?;
+    // ... calculation logic
+    serde_json::to_string(&results)
+        .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
+}
+```
+
+## Testing
+
+Use `#[cfg(test)]` modules. Test WASM functions separately from core logic.
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    // Test core logic without WASM bindings
+}
+```
+
+## Documentation
+
+Use `///` for public items, `//!` for crate-level docs. Document WASM exports clearly.
+
+## Code Organization
+
+Separate WASM bindings from core calculation logic. Keep core functions pure and testable.

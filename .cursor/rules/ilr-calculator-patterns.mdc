@@ -1,0 +1,87 @@
+---
+description: ILR calculator domain-specific patterns and conventions
+alwaysApply: true
+---
+
+# ILR Calculator Domain Patterns
+
+## Date Handling
+
+Always use `chrono::NaiveDate` for date calculations. Format dates as "YYYY-MM-DD" strings for JSON/API.
+
+```rust
+// ✅ GOOD
+use chrono::NaiveDate;
+
+fn parse_date(input: &str) -> Result<NaiveDate, Box<dyn Error>> {
+    NaiveDate::parse_from_str(input, "%Y-%m-%d")
+        .map_err(|e| Box::new(e) as Box<dyn Error>)
+}
+```
+
+## Absence Calculation Patterns
+
+- Use 365-day rolling windows ending on absence end date
+- Merge overlapping and adjacent absence periods to prevent double-counting
+- Calculate inclusive date ranges (end_date - start_date + 1 days)
+
+```rust
+// ✅ GOOD - Merging overlapping periods
+let mut merged_periods: Vec<(NaiveDate, NaiveDate)> = Vec::new();
+for &(start, end) in sorted_periods.iter() {
+    if let Some(last) = merged_periods.last_mut() {
+        if start <= last.1 + Duration::days(1) {
+            last.1 = max(last.1, end);
+        } else {
+            merged_periods.push((start, end));
+        }
+    }
+}
+```
+
+## JSON Structure
+
+Absence periods use consistent field names: `start_date` and `end_date` (both "YYYY-MM-DD" format).
+
+```json
+[
+  {"start_date": "2023-01-01", "end_date": "2023-01-10"},
+  {"start_date": "2023-05-15", "end_date": "2023-05-20"}
+]
+```
+
+## Input Validation
+
+- Validate that end_date >= start_date
+- Validate date format before parsing
+- Provide clear error messages for invalid input
+
+## Error Messages
+
+Use domain-specific error messages that help users understand ILR calculation issues.
+
+```rust
+// ✅ GOOD
+if period.end_date < period.start_date {
+    return Err("End date must be on or after start date".into());
+}
+```
+
+## Testing Patterns
+
+Test edge cases: overlapping periods, periods outside 365-day window, adjacent periods, single-day absences.
+
+```rust
+#[test]
+fn test_overlapping_absences() {
+    let periods = vec![
+        (d(2023, 3, 1), d(2023, 3, 15)),
+        (d(2023, 3, 10), d(2023, 3, 25)),
+    ];
+    // Test merged calculation
+}
+```
+
+## WASM Interface Design
+
+Expose high-level calculation functions. Accept JSON string, return JSON string for easy JavaScript integration.
