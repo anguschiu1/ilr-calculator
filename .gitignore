@@ -37,3 +37,32 @@ Cargo.lock
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,rust
+
+### Node.js / Nuxt.js ###
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+*.local
+.pnpm-store/
+
+# Package manager lock files (keep pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# WASM build output
+pkg/
