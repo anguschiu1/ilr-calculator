@@ -1,0 +1,35 @@
+{
+  "name": "ilr-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "dev:clean": "rm -rf .nuxt .output && nuxt dev",
+    "build": "nuxt build",
+    "clean": "rm -rf .nuxt .output",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "wasm:build": "wasm-pack build --target web --out-dir pkg",
+    "wasm:build:node": "wasm-pack build --target nodejs --out-dir pkg",
+    "wasm:test": "node scripts/wasm-test.mjs",
+    "wasm:test:rust": "wasm-pack test --node",
+    "wasm:update": "./scripts/update-wasm-pack.sh"
+  },
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.1",
+    "clsx": "^2.1.1",
+    "nuxt": "^3.13.0",
+    "tailwind-merge": "^2.5.0",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.0.0"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.5.0"
+  }
+}
